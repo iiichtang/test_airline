@@ -107,13 +107,13 @@ class TakeFlight(Base):
     arcd = Column(String(10, collation='utf8_unicode_ci'))
     tkno = Column(String(50, collation='utf8_unicode_ci'))
     cpno = Column(String(10, collation='utf8_unicode_ci'))
-    usdnet = Column(DOUBLE)
+    usdnet = Column(Float)
     flcl = Column(String(10, collation='utf8_unicode_ci'))
     facl = Column(String(10, collation='utf8_unicode_ci'))
     bkcls = Column(String(10, collation='utf8_unicode_ci'))
     turc = Column(String(50, collation='utf8_unicode_ci'))
     turc2 = Column(String(50, collation='utf8_unicode_ci'))
-    usdyq = Column(DOUBLE)
+    usdyq = Column(Float)
     mileage = Column(Integer)
 
     def __init__(self, data_list):
