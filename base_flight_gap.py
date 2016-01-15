@@ -9,6 +9,7 @@ from sqlalchemy import DateTime
 from sqlalchemy import Date
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import scoped_session
+from sqlalchemy.sql import func
 import time
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -95,11 +96,29 @@ class flight_aggregator():
         print "frequency", frequency
 
         session.close()
-        return {"frequency_count_2013": frequency_count_2013, "frequency_count_2014": frequency_count_2014,
-                "frequency_count_2015": frequency_count_2015, "frequency": frequency}
+
+        result = {"frequency_count_2013": frequency_count_2013, "frequency_count_2014": frequency_count_2014,
+                  "frequency_count_2015": frequency_count_2015, "frequency": frequency}
+        print result
+        return result
 
     def get_travel_gap(self):
         # the gap between each travel
+        start_time_2013 = 0
+        end_time_2013 = 0
+        total_time_2013 = timedelta(0)
+        count_2013 = 0
+
+        start_time_2014 = 0
+        end_time_2014 = 0
+        total_time_2014 = timedelta(0)
+        count_2014 = 0
+
+        start_time_2015 = 0
+        end_time_2015 = 0
+        total_time_2015 = timedelta(0)
+        count_2015 = 0
+
         start_time = 0
         end_time = 0
         total_time = timedelta(0)
@@ -109,20 +128,71 @@ class flight_aggregator():
             return {"gap": -1}
 
         for data in self.flight_record_list:
+            if data['depdate'] < date(2014, 1, 1):
+                if end_time_2013 == 0:
+                    start_time_2013 = data['depdate']
+                    end_time_2013 = start_time_2013
+                else:
+                    total_time_2013 += data['depdate'] - end_time_2013
+                    end_time_2013 = data['depdate']
+                    count_2013 += 1
+            elif date(2014, 1, 1) <= data['depdate'] < date(2015, 1, 1):
+                if end_time_2014 == 0:
+                    start_time_2014 = data['depdate']
+                    end_time_2014 = start_time_2014
+                else:
+                    total_time_2014 += data['depdate'] - end_time_2014
+                    end_time_2014 = data['depdate']
+                    count_2014 += 1
+            elif data['depdate'] >= date(2015, 1, 1):
+                if end_time_2015 == 0:
+                    start_time_2015 = data['depdate']
+                    end_time_2015 = start_time_2015
+                else:
+                    total_time_2015 += data['depdate'] - end_time_2015
+                    end_time_2015 = data['depdate']
+                    count_2015 += 1
+
             if end_time == 0:
                 start_time = data['depdate']
                 end_time = start_time
             else:
                 total_time += data['depdate'] - end_time
                 end_time = data['depdate']
-            count += 1
+                count += 1
+
+        gap_2013 = 0 if count_2013 == 0 else total_time_2013 / count_2013
+        gap_2014 = 0 if count_2014 == 0 else total_time_2014 / count_2014
+        gap_2015 = 0 if count_2015 == 0 else total_time_2015 / count_2015
+        gap = 0 if count == 0 else total_time / count
+
+        print "start_time_2013", start_time_2013
+        print "end_time_2013", end_time_2013
+        print "total_time_2013", total_time_2013
+        print "count_2013", count_2013
+        print "gap_2013", gap_2013
+
+        print "start_time_2014", start_time_2014
+        print "end_time_2014", end_time_2014
+        print "total_time_2014", total_time_2014
+        print "count_2014", count_2014
+        print "gap_2014", gap_2014
+
+        print "start_time_2015", start_time_2015
+        print "end_time_2015", end_time_2015
+        print "total_time_2015", total_time_2015
+        print "count_2015", count_2015
+        print "gap_2015", gap_2015
 
         print "start_time", start_time
         print "end_time", end_time
         print "total_time", total_time
         print "count", count
-        print "gap", total_time / count
-        return {"gap": total_time / count}
+        print "gap", gap
+
+        result = {"gap_2013": gap_2013, "gap_2014": gap_2014, "gap_2015": gap_2015, "gap": gap}
+        print result
+        return result
 
     def get_booking_count(self, customer_id):
         Session = scoped_session(sessionmaker(bind=self.engine))
@@ -137,16 +207,131 @@ class flight_aggregator():
         session.close()
         return booking_count
 
-    def get_flight_usd(self):
-        pass
+    def get_revenue(self, customer_id):
+        Session = scoped_session(sessionmaker(bind=self.engine))
+        session = Session()
 
-    def get_revenue(self):
-        pass
+        revenue_count_2013 = self.session.query(func.sum(TakeFlight.usdnet).label("result")) \
+            .filter(TakeFlight.customer_id == customer_id) \
+            .filter(TakeFlight.depdate < date(2014, 1, 1)) \
+            .all()
+
+        revenue_count_2013 = revenue_count_2013[0].result
+
+        revenue_count_2014 = self.session.query(func.sum(TakeFlight.usdnet).label("result")) \
+            .filter(TakeFlight.customer_id == customer_id) \
+            .filter(TakeFlight.depdate >= date(2014, 1, 1)) \
+            .filter(TakeFlight.depdate < date(2015, 1, 1)) \
+            .all()
+
+        revenue_count_2014 = revenue_count_2014[0].result
+
+        revenue_count_2015 = self.session.query(func.sum(TakeFlight.usdnet).label("result")) \
+            .filter(TakeFlight.customer_id == customer_id) \
+            .filter(TakeFlight.depdate >= date(2015, 1, 1)) \
+            .all()
+
+        revenue_count_2015 = revenue_count_2015[0].result
+
+        revenue_count = revenue_count_2013 + revenue_count_2014 + revenue_count_2015
+
+        result = {"revenue_count_2013": revenue_count_2013, "revenue_count_2014": revenue_count_2014,
+                  "revenue_count_2015": revenue_count_2015, "revenue_count": revenue_count}
+        print result
+        session.close()
+        return result
+
+    def get_duty_free(self, customer_id, method):
+        Session = scoped_session(sessionmaker(bind=self.engine))
+        session = Session()
+
+        duty_free_count_2013 = 0
+        duty_free_count_2014 = 0
+        duty_free_count_2015 = 0
+
+        if method != "pay_net_usd":
+            count_2013 = self.session.query(func.sum(DutyFree.pay_amt_usd).label("result")) \
+                .filter(DutyFree.customer_id == customer_id) \
+                .filter(DutyFree.depdate < date(2014, 1, 1)) \
+                .all()
+
+            count_2013 = count_2013[0].result
+            if count_2013 is None:
+                count_2013 = 0
+
+            count_2014 = self.session.query(func.sum(DutyFree.pay_amt_usd).label("result")) \
+                .filter(DutyFree.customer_id == customer_id) \
+                .filter(DutyFree.depdate >= date(2014, 1, 1)) \
+                .filter(DutyFree.depdate < date(2015, 1, 1)) \
+                .all()
+
+            count_2014 = count_2014[0].result
+            if count_2014 is None:
+                count_2014 = 0
+
+            count_2015 = self.session.query(func.sum(DutyFree.pay_amt_usd).label("result")) \
+                .filter(DutyFree.customer_id == customer_id) \
+                .filter(DutyFree.depdate >= date(2015, 1, 1)) \
+                .all()
+
+            count_2015 = count_2015[0].result
+            if count_2015 is None:
+                count_2015 = 0
+
+            duty_free_count_2013 += count_2013
+            duty_free_count_2014 += count_2014
+            duty_free_count_2015 += count_2015
+
+        if method != "pay_amt_usd":
+            count_2013 = self.session.query(func.sum(DutyFree.pay_net_usd).label("result")) \
+                .filter(DutyFree.customer_id == customer_id) \
+                .filter(DutyFree.depdate < date(2014, 1, 1)) \
+                .all()
+
+            count_2013 = count_2013[0].result
+            if count_2013 is None:
+                count_2013 = 0
+
+            count_2014 = self.session.query(func.sum(DutyFree.pay_net_usd).label("result")) \
+                .filter(DutyFree.customer_id == customer_id) \
+                .filter(DutyFree.depdate >= date(2014, 1, 1)) \
+                .filter(DutyFree.depdate < date(2015, 1, 1)) \
+                .all()
+
+            count_2014 = count_2014[0].result
+            if count_2014 is None:
+                count_2014 = 0
+
+            count_2015 = self.session.query(func.sum(DutyFree.pay_net_usd).label("result")) \
+                .filter(DutyFree.customer_id == customer_id) \
+                .filter(DutyFree.depdate >= date(2015, 1, 1)) \
+                .all()
+
+            count_2015 = count_2015[0].result
+            if count_2015 is None:
+                count_2015 = 0
+
+            duty_free_count_2013 += count_2013
+            duty_free_count_2014 += count_2014
+            duty_free_count_2015 += count_2015
+
+        duty_free_count = duty_free_count_2013 + duty_free_count_2014 + duty_free_count_2015
+
+        result = {"duty_free_count_2013": duty_free_count_2013, "duty_free_count_2014": duty_free_count_2014,
+                  "duty_free_count_2015": duty_free_count_2015, "duty_free_count": duty_free_count}
+        print result
+        session.close()
+        return result
+
 
 if __name__ == "__main__":
     flight_aggregate = flight_aggregator()
     # flight_aggregate.get_customer_list("customer_all.csv")
-    flight_aggregate.get_flight_record("19920400000403")
-    flight_aggregate.get_travel_gap()
+    # flight_aggregate.get_flight_record("19920400000403")
+    # flight_aggregate.get_travel_gap()
     # flight_aggregate.get_booking_count("19920400000403")
-    flight_aggregate.get_travel_frequency("19920400000403")
+    # flight_aggregate.get_travel_frequency("19920400000403")
+    # flight_aggregate.get_revenue("19920400000403")
+    # flight_aggregate.get_duty_free("19890300000711", "pay_amt_usd")
+    # flight_aggregate.get_duty_free("19890300000711", "pay_net_usd")
+    flight_aggregate.get_duty_free("19890300000711", "all")

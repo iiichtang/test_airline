@@ -12,21 +12,21 @@ if __name__ == "__main__":
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    read_ptr = open('booking.csv', 'r')
+    read_ptr = open('booking.csv.txt', 'r')
     for row in csv.reader(read_ptr):
         booking_data = Booking(row)
         session.add(booking_data)
     session.commit()
     read_ptr.close()
 
-    read_ptr = open('customer.csv', 'r')
+    read_ptr = open('customer.csv.txt', 'r')
     for row in csv.reader(read_ptr):
         customer_data = Customer(row)
         session.add(customer_data)
     session.commit()
     read_ptr.close()
 
-    read_ptr = open('duty_free.csv', 'r')
+    read_ptr = open('duty_free.csv.txt', 'r')
     count = 0
     for row in csv.reader(read_ptr):
         if count == 0:
@@ -37,9 +37,12 @@ if __name__ == "__main__":
     session.commit()
     read_ptr.close()
 
-    read_ptr = open('take_flight.csv', 'r')
+    read_ptr = open('take_flight.csv.txt', 'r')
     row_count = 0
     for row in csv.reader(read_ptr):
+        print row
+        if row[10] is "" or row[15] is "":
+            continue
         take_flight_data = TakeFlight(row)
         session.add(take_flight_data)
         row_count += 1
