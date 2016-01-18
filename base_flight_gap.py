@@ -479,8 +479,7 @@ if __name__ == "__main__":
     # flight_aggregate.get_all_value()
     # flight_aggregate.get_all_value_from_csv("has_revenue_metadata.csv", "has_revenue_value.csv")
 
-
-    for title_count in range(2, 8):
+    for title_count in [5,6,7,11,12,13,14,15,16,17,18,19]:
         print title_count
         read_filename = "customer_%s.csv" % title_count
         write_filename = "all_value_%s.csv" % title_count
