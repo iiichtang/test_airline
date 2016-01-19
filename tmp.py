@@ -480,14 +480,8 @@ if __name__ == "__main__":
     # flight_aggregate.get_all_value_from_csv("has_revenue_metadata.csv", "has_revenue_value.csv")
 
 
-    # for title_count in range(20, 20):
-    #    print title_count
-    #    read_filename = "customer_%s.csv" % title_count
-    #    write_filename = "all_value_%s.csv" % title_count
-    #    flight_aggregate.get_all_result(read_filename, write_filename)
-
-    # flight_aggregate.get_all_value_from_csv("all_value.csv", "04_all_real_value.csv")
-    # flight_aggregate.get_all_value_from_csv("01_all_value_with_gap.csv", "05_all_real_value_with_gap.csv")
-    # flight_aggregate.get_all_value_from_csv("02_all_value_with_duty_free.csv", "06_all_real_value_with_duty_free.csv")
-    flight_aggregate.get_all_value_from_csv("03_all_value_with_gap_and_duty_free.csv",
-                                            "07_all_real_value_with_gap_and_duty_free.csv")
+    for title_count in range(8, 9):
+        print title_count
+        read_filename = "customer_%s.csv" % title_count
+        write_filename = "all_value_%s.csv" % title_count
+        flight_aggregate.get_all_result(read_filename, write_filename)
